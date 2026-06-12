@@ -1,0 +1,13 @@
+[project]
+name = "live-vision-agent"
+version = "0.1.0"
+description = "Local real-time vision-and-voice agent on the Gemini Live API"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "google-genai>=2.8.0",
+    "opencv-python>=4.13.0.92",
+    "pillow>=12.2.0",
+    "pyaudio>=0.2.14",
+    "python-dotenv>=1.2.2",
+]
