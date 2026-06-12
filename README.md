@@ -122,7 +122,7 @@ exit.
 - **Audio is static / too fast / too slow** — sample-rate mismatch. Mic must
   send 16 kHz; speaker must play 24 kHz; both mono 16-bit PCM.
 - **WebSocket closes with invalid payload** — wrong MIME type or field. Audio
-  MIME must be `audio/pcm;rate=16000`, images `image/jpeg` sent via `media=` at
+  MIME must be `audio/pcm;rate=16000`, images `image/jpeg` sent via `video=` at
   ≤1 FPS, and `response_modalities=["AUDIO"]`.
 - **`TypeError` / unexpected keyword on `send_realtime_input` or
   `LiveConnectConfig`** — the SDK renamed a field. Inspect the installed SDK

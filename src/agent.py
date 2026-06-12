@@ -81,9 +81,10 @@ class LiveVisionAgent:
         while True:
             frame = await asyncio.to_thread(self._camera.read_jpeg_frame)
             if frame is not None:
-                # Image frames go via media=, NOT video= (see docs/BUILD_SPEC.md §8.4)
+                # Image frames go via video=. The media= kwarg serializes to the
+                # deprecated realtime_input.media_chunks, which the Live API rejects.
                 await self._session.send_realtime_input(
-                    media=types.Blob(data=frame, mime_type="image/jpeg")
+                    video=types.Blob(data=frame, mime_type="image/jpeg")
                 )
             await asyncio.sleep(FRAME_INTERVAL_SECONDS)
 
