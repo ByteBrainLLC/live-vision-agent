@@ -43,6 +43,7 @@ CWC_TARGET_TOKENS: int = 12_800
 
 # --- Behavior toggles ---
 PRINT_INPUT_TRANSCRIPTION: bool = True   # show what the user said, not just the model
+SHOW_CAMERA_PREVIEW: bool = False        # debug only: local preview window of captured frames
 
 SYSTEM_PROMPT: str = """
 You are a sharp, friendly assistant with live access to the user's camera.

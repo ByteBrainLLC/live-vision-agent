@@ -3,7 +3,7 @@ import io
 import cv2
 from PIL import Image
 
-from src.config import MAX_FRAME_SIZE, JPEG_QUALITY
+from src.config import MAX_FRAME_SIZE, JPEG_QUALITY, SHOW_CAMERA_PREVIEW
 
 
 class Camera:
@@ -20,6 +20,9 @@ class Camera:
         ok, frame_bgr = self._capture.read()
         if not ok or frame_bgr is None:
             return None
+        if SHOW_CAMERA_PREVIEW:
+            cv2.imshow("Camera Preview", frame_bgr)
+            cv2.waitKey(1)
         frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(frame_rgb)
         image.thumbnail(MAX_FRAME_SIZE)  # preserves aspect ratio
