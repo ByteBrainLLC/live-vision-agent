@@ -11,6 +11,7 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from src.agent import LiveVisionAgent
 from src.config import SERVER_HOST, SERVER_PORT, AUTO_OPEN_BROWSER
@@ -18,6 +19,9 @@ from src.config import SERVER_HOST, SERVER_PORT, AUTO_OPEN_BROWSER
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 app = FastAPI()
+# Serve brand assets (bytebrain-wordmark.png, bytebrain-icon.png) and any other
+# files from src/static/ at /static. The page itself stays at "/".
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 _clients: set[asyncio.Queue] = set()
 _agent: LiveVisionAgent | None = None
 

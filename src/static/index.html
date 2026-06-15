@@ -7,14 +7,22 @@
 :root{
   --bg:#0a0e14; --panel:#0f151e; --line:#1c2633; --text:#d7e0ea; --dim:#5d6f82;
   --cyan:#2ee6d6; --cyan-dim:#17554f; --amber:#f5b452; --red:#ff5d5d;
+  --blue:#2f6bff; --purple:#7b2ff7; --grad:linear-gradient(90deg,var(--blue),var(--purple));
   --mono:"Cascadia Mono",Consolas,monospace; --sans:"Segoe UI",system-ui,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;overflow:hidden}
 
-header{display:flex;align-items:center;gap:16px;padding:10px 18px;border-bottom:1px solid var(--line);flex:none}
-header h1{font:600 13px var(--mono);letter-spacing:3px;color:var(--cyan);text-transform:uppercase}
+header{display:flex;align-items:center;gap:14px;padding:10px 18px;flex:none;
+  border-bottom:1px solid var(--line);position:relative}
+header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--grad);opacity:.85}
+#brandicon{height:34px;width:auto;display:block}
+#wordmark{height:22px;width:auto;display:block}
+#wordmark-fallback{font:700 17px var(--sans);letter-spacing:2px;display:none}
+#wordmark-fallback b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.product{font:600 11px var(--mono);letter-spacing:3px;color:var(--dim);text-transform:uppercase;
+  border-left:1px solid var(--line);padding-left:14px}
 #clock{font:12px var(--mono);color:var(--dim);margin-left:auto}
 #timer{font:12px var(--mono);color:var(--dim)}
 
@@ -65,11 +73,24 @@ button:hover{border-color:var(--cyan-dim)}
 button .key{color:var(--dim);margin-right:6px}
 button.active{color:var(--amber);border-color:#4a3a1e;background:#1d1812}
 #legend{font:10px var(--mono);color:var(--dim);letter-spacing:1px}
+
+#credits{flex:none;display:flex;align-items:center;justify-content:center;gap:9px;
+  padding:7px 18px;border-top:1px solid var(--line);background:#080b10}
+#credits .creditmark{height:18px;width:auto;opacity:.9}
+#credits span{font:10px var(--mono);letter-spacing:1px;color:var(--dim)}
+#credits b{color:var(--text);font-weight:600}
+#credits a{color:var(--cyan);text-decoration:none}
+#credits a:hover{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 </style>
 </head>
 <body>
 <header>
-  <h1>Live Vision Agent</h1>
+  <img id="brandicon" src="/static/bytebrain-icon.png" alt="ByteBrain"
+       onerror="this.style.display='none'">
+  <img id="wordmark" src="/static/bytebrain-wordmark.png" alt="BYTEBRAIN"
+       onerror="this.style.display='none';document.getElementById('wordmark-fallback').style.display='inline'">
+  <span id="wordmark-fallback"><b>BYTEBRAIN</b></span>
+  <span class="product">Live Vision Agent</span>
   <span class="pill" id="status" data-state="connecting"><span class="dot"></span><span id="statustext">connecting</span></span>
   <span id="goaway"></span>
   <span id="timer">00:00</span>
@@ -98,6 +119,11 @@ button.active{color:var(--amber);border-color:#4a3a1e;background:#1d1812}
   <button id="restartbtn"><span class="key">[R]</span>restart</button>
   <span id="legend">localhost only &middot; streams to Google Live API &middot; nothing saved to disk</span>
 </footer>
+
+<div id="credits">
+  <img class="creditmark" src="/static/bytebrain-icon.png" alt="" onerror="this.style.display='none'">
+  <span>Developed by <b>ByteBrain LLC</b> &middot; <a href="https://www.ByteBrain.org" target="_blank" rel="noopener">www.ByteBrain.org</a> &middot; &copy; 2026</span>
+</div>
 
 <script>
 "use strict";
