@@ -150,13 +150,16 @@ server-side.
   `LiveConnectConfig`** — the SDK renamed a field. Inspect the installed SDK
   (`types.LiveConnectConfig.model_fields`,
   `help(session.send_realtime_input)`) and adapt.
-- **Connection drops every ~40-80s** (`keepalive ping timeout`) — expected with
-  the default `gemini-3.1-flash-live-preview`. The agent auto-reconnects and,
-  because session resumption is on, **resumes the same conversation with context
-  intact**, so you should barely notice beyond a brief pause. If you'd rather
-  have steadier connections at the cost of losing context on any drop, switch to
-  `gemini-2.5-flash-native-audio-latest` and set `SESSION_RESUMPTION = False`
-  (that model can't resume). List Live-capable models for your key with:
+- **Frequent connection drops** (`keepalive ping timeout`) — inherent to
+  `gemini-3.1-flash-live-preview`. The agent hides them with **make-before-break
+  rotation**: it proactively opens the next (resumed) connection and switches to
+  it every `PROACTIVE_ROTATE_SECONDS` (default 20s) — before the drop — so the
+  conversation continues seamlessly with full context. If a drop still sneaks in
+  early, fast keepalive (`WS_PING_TIMEOUT_SECONDS`) detects it in ~6s and
+  reconnects. If you'd rather have steadier single connections (losing context on
+  any drop), switch to `gemini-2.5-flash-native-audio-latest` and set
+  `SESSION_RESUMPTION = False` (that model can't resume). List Live-capable
+  models for your key with:
   `uv run python -c "from google import genai; from src.config import require_api_key; [print(m.name) for m in genai.Client(api_key=require_api_key()).models.list() if 'bidiGenerateContent' in (m.supported_actions or [])]"`
 - **Session ends after ~10 minutes** — expected; see Known limitations.
 

@@ -50,11 +50,30 @@ CWC_TRIGGER_TOKENS: int = 25_600
 CWC_TARGET_TOKENS: int = 12_800
 
 # --- Reliability ---
-# Live connections recycle on a hard server clock (~2 min for this model on the
-# current tier, regardless of config). Reconnect handles the drop automatically.
+# gemini-3.1-flash-live drops its WebSocket every ~40-80s (keepalive bug). To
+# keep the conversation seamless we rotate connections PROACTIVELY using
+# make-before-break: open the next (resumed) connection and switch the loops over
+# to it BEFORE the old one dies, so there is no dead-air gap waiting for a drop
+# to be detected.
 AUTO_RECONNECT: bool = True
-RECONNECT_DELAY_SECONDS: float = 0.4   # short gap; resumption makes reconnect near-seamless
-MAX_RECONNECT_FAILURES: int = 10       # consecutive failed connection attempts before giving up
+RECONNECT_DELAY_SECONDS: float = 0.4    # only used after an *unexpected* drop
+MAX_RECONNECT_FAILURES: int = 10        # consecutive failed connect attempts before giving up
+
+# Proactively rotate the connection this many seconds after it opens, before the
+# keepalive death (observed anywhere from ~20s to ~80s — variable). Kept low so
+# the seamless make-before-break rotation usually wins the race against a drop.
+# Lower = more seamless but more frequent handoffs (more resume overhead).
+PROACTIVE_ROTATE_SECONDS: float = 20.0
+# Prefer to rotate during a pause; if the agent is still speaking at the deadline,
+# wait up to this long for silence before rotating anyway (avoids mid-sentence
+# rotation, which resumption may not continue smoothly).
+ROTATE_SPEAKING_GRACE_SECONDS: float = 5.0
+
+# WebSocket keepalive: detect a genuinely dead connection fast (the SDK otherwise
+# inherits the websockets default ~20s ping timeout = ~20s of dead air).
+WS_PING_INTERVAL_SECONDS: float = 5.0
+WS_PING_TIMEOUT_SECONDS: float = 6.0
+WS_OPEN_TIMEOUT_SECONDS: float = 12.0
 
 # Session resumption: carry conversation context across reconnects so the agent
 # does not forget the chat every time the connection recycles.
