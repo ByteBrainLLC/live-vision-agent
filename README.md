@@ -4,9 +4,11 @@ A local Python prototype that connects your microphone and webcam to the Gemini
 Live API so you can speak to an AI agent, show it things through your camera,
 hear spoken responses, and read a terminal transcript.
 
-This is a local development prototype. It does not record or store audio, video,
-frames, or transcripts. Session resumption is intentionally disabled, so no
-conversation data is cached server-side beyond what the live request requires.
+This is a local development prototype. It does not write audio, video, frames,
+or transcripts to your disk. **Session resumption is enabled** so the
+conversation survives the Live API's frequent connection drops — this means
+Google caches your audio/video/text server-side for ~2 hours (see Privacy). Set
+`SESSION_RESUMPTION = False` in `src/config.py` for zero server-side retention.
 
 ## What it does
 
@@ -99,13 +101,33 @@ uv run python -c "from src.config import GEMINI_API_KEY; print(bool(GEMINI_API_K
 
 ## Run
 
+**With the browser HUD (recommended):**
+
+```bash
+PYTHONPATH=. uv run python -m src.server
+```
+
+Opens `http://127.0.0.1:8800` — camera view, live transcript, mic waveform,
+mute/pause/restart controls (keys `M` / `C` / `R`). The browser is a dashboard
+only: mic, speaker, and webcam stay in the Python process, and the API key
+never reaches the page. The server binds to localhost only.
+
+**Terminal only:**
+
 ```bash
 PYTHONPATH=. uv run python -m src.agent
 ```
 
-Wait for the startup banner, then speak. Hold something up to the camera and ask
-about it. Press `Ctrl+C` to quit; the mic, speaker, and webcam are released on
-exit.
+Either way: wait for the startup banner, then speak. Hold something up to the
+camera and ask about it. Press `Ctrl+C` in the terminal to quit; the mic,
+speaker, and webcam are released on exit.
+
+**About connection drops:** on the current model/tier the Live connection
+recycles on a hard server clock (~2 minutes), independent of anything in this
+app. The agent reconnects automatically; with `SESSION_RESUMPTION = True`
+(default) the conversation continues across the reconnect with context intact.
+Set it to `False` to reset context each time and keep nothing cached
+server-side.
 
 ## Common errors and fixes
 
@@ -128,37 +150,47 @@ exit.
   `LiveConnectConfig`** — the SDK renamed a field. Inspect the installed SDK
   (`types.LiveConnectConfig.model_fields`,
   `help(session.send_realtime_input)`) and adapt.
+- **Connection drops every ~40-80s** (`keepalive ping timeout`) — expected with
+  the default `gemini-3.1-flash-live-preview`. The agent auto-reconnects and,
+  because session resumption is on, **resumes the same conversation with context
+  intact**, so you should barely notice beyond a brief pause. If you'd rather
+  have steadier connections at the cost of losing context on any drop, switch to
+  `gemini-2.5-flash-native-audio-latest` and set `SESSION_RESUMPTION = False`
+  (that model can't resume). List Live-capable models for your key with:
+  `uv run python -c "from google import genai; from src.config import require_api_key; [print(m.name) for m in genai.Client(api_key=require_api_key()).models.list() if 'bidiGenerateContent' in (m.supported_actions or [])]"`
 - **Session ends after ~10 minutes** — expected; see Known limitations.
 
 ## Privacy
 
 - **Your microphone audio and webcam video are streamed to Google's Gemini Live
   API for processing.** This is a cloud service, not an offline/on-device model.
-- **Session resumption (server-side caching) is disabled by default.** Enabling
-  it would cache your text, audio, video, and model outputs on Google's servers
-  for up to ~2 hours.
-- Nothing is written to disk: no recordings, no frames, no transcripts beyond
-  the terminal output.
+- **Session resumption is ON by default**, which is what lets the conversation
+  survive the ~2-minute connection drops. The tradeoff: Google caches your text,
+  audio, video, and model outputs server-side for up to ~2 hours to enable the
+  resume. Set `SESSION_RESUMPTION = False` in `src/config.py` if you need zero
+  server-side retention — the conversation will reset on each reconnect instead.
+- Nothing is written to **your disk**: no recordings, no frames, no transcripts
+  beyond the terminal/HUD output.
 - Don't point the camera at anything you wouldn't send to a cloud API:
   documents with PII, payment cards, or screens showing credentials.
 - Gemini Live watermarks its output audio — worth knowing if you share outputs.
 
 ## Known limitations
 
-- **~10-minute connection limit.** A single Live connection lasts roughly 10
-  minutes; the server sends a GoAway notice ~60 seconds before the end, which
-  the agent prints to the terminal. Auto-reconnect is a future improvement, not
-  part of this MVP.
+- **Connections recycle every ~2 minutes** on the current model/tier — a hard
+  server-side limit, confirmed to fire regardless of config (verified by
+  disabling transcription, compression, and even the camera; all still dropped
+  at ~2 min). The agent auto-reconnects; with session resumption on (default)
+  the conversation continues seamlessly. This is the documented Live API
+  behavior, not a bug in this app.
 - One camera, one mic, default devices only.
 - Unbounded playback queue (fine for the MVP; bounded queue is a hardening
   item).
 
 ## Future improvements
 
-- Auto-reconnect using session-resumption handles (opt-in, with the privacy
-  caveat above).
 - Audio/camera device selectors and health checks.
-- Local web UI with transcript pane and camera preview.
+- Voice + model selectors in the HUD.
 - Tool/function calling.
 
 See [docs/BUILD_SPEC.md](docs/BUILD_SPEC.md) for the full build specification.

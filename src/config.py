@@ -19,7 +19,15 @@ def require_api_key() -> str:
 
 
 # --- Model / voice ---
-MODEL: str = "gemini-3.1-flash-live-preview"   # fallback: "gemini-2.5-flash-live-preview"
+# gemini-3.1-flash-live-preview drops its connection often (keepalive timeout
+# ~40-80s after a turn), BUT it is the only Live model here that emits resumable
+# session handles. Paired with SESSION_RESUMPTION + AUTO_RECONNECT below, each
+# drop is survived seamlessly WITH conversation context intact (verified:
+# the agent recalls facts told before a reconnect).
+# Alternative: gemini-2.5-flash-native-audio-latest is steadier per-connection
+# but cannot resume — any drop wipes the conversation. The spec's original
+# fallback (gemini-2.5-flash-live-preview) no longer exists in the API.
+MODEL: str = "gemini-3.1-flash-live-preview"
 VOICE: str = "Zephyr"                          # other Gemini Live voices may be substituted
 
 # --- Audio contract ---
@@ -40,6 +48,26 @@ MEDIA_RESOLUTION: str = "MEDIA_RESOLUTION_MEDIUM"  # _LOW | _MEDIUM | _HIGH
 THINKING_LEVEL: str = "MINIMAL"                    # MINIMAL | LOW | MEDIUM | HIGH
 CWC_TRIGGER_TOKENS: int = 25_600
 CWC_TARGET_TOKENS: int = 12_800
+
+# --- Reliability ---
+# Live connections recycle on a hard server clock (~2 min for this model on the
+# current tier, regardless of config). Reconnect handles the drop automatically.
+AUTO_RECONNECT: bool = True
+RECONNECT_DELAY_SECONDS: float = 0.4   # short gap; resumption makes reconnect near-seamless
+MAX_RECONNECT_FAILURES: int = 10       # consecutive failed connection attempts before giving up
+
+# Session resumption: carry conversation context across reconnects so the agent
+# does not forget the chat every time the connection recycles.
+# PRIVACY TRADEOFF: when True, Google caches your audio/video/text server-side
+# for ~2h to enable the resume. This intentionally reverses the original spec's
+# "resumption off" stance — see README privacy section. Set False for zero
+# server-side retention (at the cost of context loss on every reconnect).
+SESSION_RESUMPTION: bool = True
+
+# --- Local HUD server (src/server.py) ---
+SERVER_HOST: str = "127.0.0.1"   # localhost only; never bind 0.0.0.0 without auth
+SERVER_PORT: int = 8800
+AUTO_OPEN_BROWSER: bool = True
 
 # --- Behavior toggles ---
 PRINT_INPUT_TRANSCRIPTION: bool = True   # show what the user said, not just the model
